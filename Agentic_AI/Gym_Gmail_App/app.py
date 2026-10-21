@@ -13,8 +13,11 @@ from googleapiclient.discovery import build
 
 app = Flask(__name__)
 
-# Permission to send emails only
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CREDENTIALS_FILE = os.path.join(BASE_DIR, "credentials.json")
+TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
 
 HTML = """
 <!DOCTYPE html>
@@ -23,8 +26,10 @@ HTML = """
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gym Management System</title>
+
 <style>
 * { box-sizing: border-box; }
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -35,6 +40,7 @@ body {
     align-items: center;
     padding: 20px;
 }
+
 .container {
     background: white;
     width: 100%;
@@ -43,14 +49,19 @@ body {
     border-radius: 16px;
     box-shadow: 0 12px 35px #0005;
 }
+
 h1 { text-align: center; color: #16263e; }
 p { text-align: center; color: #64748b; }
+
 label {
     display: block;
     margin-top: 15px;
+    margin-bottom: 5px;
     font-weight: bold;
 }
+
 input, select {
+    display: block;
     width: 100%;
     padding: 12px;
     margin-top: 7px;
@@ -58,6 +69,7 @@ input, select {
     border-radius: 7px;
     font-size: 15px;
 }
+
 button {
     width: 100%;
     margin-top: 22px;
@@ -70,7 +82,9 @@ button {
     font-weight: bold;
     cursor: pointer;
 }
+
 button:hover { background: #115e59; }
+
 .message {
     padding: 12px;
     margin-top: 15px;
@@ -79,6 +93,7 @@ button:hover { background: #115e59; }
     color: #065f46;
     overflow-wrap: anywhere;
 }
+
 footer {
     margin-top: 20px;
     text-align: center;
@@ -87,6 +102,7 @@ footer {
 }
 </style>
 </head>
+
 <body>
 <div class="container">
     <h1>GYM MANAGEMENT</h1>
@@ -97,27 +113,27 @@ footer {
     {% endif %}
 
     <form method="POST">
-        <label>Member Name</label>
-        <input type="text" name="name"
+        <label for="name">Member Name</label>
+        <input id="name" type="text" name="name"
                placeholder="Enter member name" required>
 
-        <label>Member Email</label>
-        <input type="email" name="email"
+        <label for="email">Member Email</label>
+        <input id="email" type="email" name="email"
                placeholder="member@example.com" required>
 
-        <label>Membership Plan</label>
-        <select name="plan" required>
+        <label for="plan">Membership Plan</label>
+        <select id="plan" name="plan" required>
             <option value="Monthly">Monthly</option>
             <option value="Quarterly">Quarterly (3 months)</option>
             <option value="Half-Yearly">Half-Yearly (6 months)</option>
             <option value="Yearly">Yearly (12 months)</option>
         </select>
 
-        <label>Membership Start Date</label>
-        <input type="date" name="start_date"
+        <label for="start_date">Membership Start Date</label>
+        <input id="start_date" type="date" name="start_date"
                value="{{ today }}" required>
 
-        <button type="submit">Register & Send Email</button>
+        <button type="submit">Register &amp; Send Email</button>
     </form>
 
     <footer>Python · Flask · Gmail API · HTML · CSS</footer>
@@ -128,40 +144,40 @@ footer {
 
 
 def get_gmail_service():
-    """Authorize Gmail once and reuse the saved token."""
     creds = None
 
-    if os.path.exists("token.json"):
+    if os.path.exists(TOKEN_FILE):
         creds = Credentials.from_authorized_user_file(
-            "token.json", SCOPES
+            TOKEN_FILE, SCOPES
         )
 
     if creds and not creds.has_scopes(SCOPES):
-        creds = None
+        raise RuntimeError(
+            "Saved token has the wrong Gmail permission. "
+            "Stop the app, delete token.json, and authorize again."
+        )
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            if not os.path.exists("credentials.json"):
+            if not os.path.exists(CREDENTIALS_FILE):
                 raise FileNotFoundError(
-                    "credentials.json is missing. "
-                    "Download it from Google Cloud."
+                    "credentials.json not found beside app.py."
                 )
 
             flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES
+                CREDENTIALS_FILE, SCOPES
             )
             creds = flow.run_local_server(port=0)
 
-        with open("token.json", "w", encoding="utf-8") as token:
+        with open(TOKEN_FILE, "w", encoding="utf-8") as token:
             token.write(creds.to_json())
 
     return build("gmail", "v1", credentials=creds)
 
 
 def send_gym_email(name, recipient, plan, start_date):
-    """Send a membership confirmation using Gmail API."""
     service = get_gmail_service()
 
     email = EmailMessage()
@@ -173,14 +189,12 @@ def send_gym_email(name, recipient, plan, start_date):
 
 Welcome to our gym!
 
-Your membership details are:
-
+Your membership details:
 Member Name: {name}
 Membership Plan: {plan}
 Start Date: {start_date}
 
-Thank you for joining us.
-We look forward to helping you achieve your fitness goals!
+Thank you for joining our gym.
 
 Regards,
 Gym Management Team
@@ -211,39 +225,45 @@ def home():
 
         if not name or not plan:
             message = "Please fill in all required fields."
+
         elif not re.fullmatch(
             r"[^@\s]+@[^@\s]+\.[^@\s]+", recipient
         ):
             message = "Please enter a valid email address."
+
         else:
             try:
                 date.fromisoformat(start_date)
 
-                message_id = send_gym_email(
-                    name, recipient, plan, start_date
-                )
-
-                message = (
-                    f"Membership email sent successfully to "
-                    f"{recipient}. Message ID: {message_id}"
-                )
-
             except ValueError:
                 message = "Please select a valid start date."
-            except Exception as error:
-                print("Gmail error:", repr(error))
-                message = (
-                    "Email could not be sent. Check credentials, "
-                    "OAuth settings, internet connection, and "
-                    "the terminal error."
-                )
+
+            else:
+                try:
+                    message_id = send_gym_email(
+                        name, recipient, plan, start_date
+                    )
+                    message = (
+                        f"Email sent successfully to {recipient}. "
+                        f"Message ID: {message_id}"
+                    )
+
+                except Exception as error:
+                    app.logger.exception("Gmail sending failed")
+                    message = (
+                        f"Email error: {type(error).__name__}: "
+                        f"{str(error)[:500]}"
+                    )
 
     return render_template_string(
-        HTML, message=message, today=date.today().isoformat()
+        HTML,
+        message=message,
+        today=date.today().isoformat()
     )
 
 
 if __name__ == "__main__":
     print("Starting Gym Management System...")
     print("Open http://127.0.0.1:5000")
-    app.run(debug=False)
+    app.run(host="127.0.0.1", port=5000, debug=False)
+
