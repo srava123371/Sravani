@@ -4,179 +4,242 @@ from flask import Flask, request, render_template_string
 app = Flask(__name__)
 
 questions = [
-    {"q": "What is the capital of India?", "options": ["Mumbai", "New Delhi", "Chennai", "Kolkata"], "answer": "New Delhi"},
-    {"q": "What is the capital of Andhra Pradesh?", "options": ["Amaravati", "Hyderabad", "Vijayawada", "Visakhapatnam"], "answer": "Amaravati"},
-    {"q": "What is the capital of Telangana?", "options": ["Warangal", "Karimnagar", "Hyderabad", "Nizamabad"], "answer": "Hyderabad"},
-    {"q": "What is the capital of Karnataka?", "options": ["Mysuru", "Bengaluru", "Mangaluru", "Hubballi"], "answer": "Bengaluru"},
-    {"q": "What is the capital of Tamil Nadu?", "options": ["Madurai", "Coimbatore", "Chennai", "Salem"], "answer": "Chennai"},
-    {"q": "What is the capital of Kerala?", "options": ["Kochi", "Kozhikode", "Thrissur", "Thiruvananthapuram"], "answer": "Thiruvananthapuram"},
-    {"q": "What is the capital of Maharashtra?", "options": ["Pune", "Mumbai", "Nagpur", "Nashik"], "answer": "Mumbai"},
-    {"q": "What is the capital of Gujarat?", "options": ["Surat", "Ahmedabad", "Gandhinagar", "Vadodara"], "answer": "Gandhinagar"},
-    {"q": "What is the capital of Rajasthan?", "options": ["Jaipur", "Jodhpur", "Udaipur", "Ajmer"], "answer": "Jaipur"},
-    {"q": "What is the capital of West Bengal?", "options": ["Darjeeling", "Kolkata", "Howrah", "Durgapur"], "answer": "Kolkata"},
-    {"q": "What is the capital of Bihar?", "options": ["Gaya", "Patna", "Bhagalpur", "Muzaffarpur"], "answer": "Patna"},
-    {"q": "What is the capital of Uttar Pradesh?", "options": ["Kanpur", "Varanasi", "Lucknow", "Agra"], "answer": "Lucknow"},
-    {"q": "What is the capital of Madhya Pradesh?", "options": ["Indore", "Gwalior", "Jabalpur", "Bhopal"], "answer": "Bhopal"},
-    {"q": "What is the capital of Odisha?", "options": ["Cuttack", "Puri", "Bhubaneswar", "Rourkela"], "answer": "Bhubaneswar"},
-    {"q": "What is the capital of Assam?", "options": ["Guwahati", "Dispur", "Silchar", "Dibrugarh"], "answer": "Dispur"}
+    {"q": "What is the capital of India?",
+     "options": ["Mumbai", "New Delhi", "Chennai", "Kolkata"],
+     "answer": "New Delhi"},
+
+    {"q": "What is the capital of Andhra Pradesh?",
+     "options": ["Amaravati", "Hyderabad", "Vijayawada", "Chennai"],
+     "answer": "Amaravati"},
+
+    {"q": "What is the capital of Telangana?",
+     "options": ["Warangal", "Hyderabad", "Karimnagar", "Nizamabad"],
+     "answer": "Hyderabad"},
+
+    {"q": "What is the capital of Karnataka?",
+     "options": ["Mysuru", "Bengaluru", "Mangaluru", "Hubballi"],
+     "answer": "Bengaluru"},
+
+    {"q": "What is the capital of Tamil Nadu?",
+     "options": ["Madurai", "Chennai", "Salem", "Coimbatore"],
+     "answer": "Chennai"},
+
+    {"q": "What is the capital of Kerala?",
+     "options": ["Kochi", "Kozhikode", "Thiruvananthapuram", "Thrissur"],
+     "answer": "Thiruvananthapuram"},
+
+    {"q": "What is the capital of Maharashtra?",
+     "options": ["Pune", "Mumbai", "Nagpur", "Nashik"],
+     "answer": "Mumbai"},
+
+    {"q": "What is the capital of Gujarat?",
+     "options": ["Surat", "Ahmedabad", "Gandhinagar", "Vadodara"],
+     "answer": "Gandhinagar"},
+
+    {"q": "What is the capital of Rajasthan?",
+     "options": ["Jaipur", "Jodhpur", "Udaipur", "Ajmer"],
+     "answer": "Jaipur"},
+
+    {"q": "What is the capital of West Bengal?",
+     "options": ["Howrah", "Kolkata", "Darjeeling", "Durgapur"],
+     "answer": "Kolkata"},
+
+    {"q": "What is the capital of Bihar?",
+     "options": ["Gaya", "Patna", "Bhagalpur", "Muzaffarpur"],
+     "answer": "Patna"},
+
+    {"q": "What is the capital of Uttar Pradesh?",
+     "options": ["Agra", "Kanpur", "Lucknow", "Varanasi"],
+     "answer": "Lucknow"},
+
+    {"q": "What is the capital of Madhya Pradesh?",
+     "options": ["Indore", "Bhopal", "Gwalior", "Jabalpur"],
+     "answer": "Bhopal"},
+
+    {"q": "What is the capital of Odisha?",
+     "options": ["Cuttack", "Puri", "Bhubaneswar", "Rourkela"],
+     "answer": "Bhubaneswar"},
+
+    {"q": "What is the capital of Assam?",
+     "options": ["Guwahati", "Dispur", "Silchar", "Dibrugarh"],
+     "answer": "Dispur"}
 ]
 
 HTML = """
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Indian Capitals Quiz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <style>
         * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            min-height: 100vh;
+            padding: 25px 12px;
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #ff9933, #ffffff, #138808);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 25px;
+            background: linear-gradient(135deg, #ff9933, white, #138808);
         }
 
         .container {
+            max-width: 750px;
+            margin: auto;
+            padding: 25px;
             background: white;
-            width: 100%;
-            max-width: 650px;
-            padding: 35px;
-            border-radius: 22px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            border-radius: 18px;
+            box-shadow: 0 8px 25px #0002;
         }
 
         h1 {
             text-align: center;
             color: #172554;
-            margin-top: 0;
         }
 
         .subtitle {
             text-align: center;
             color: #64748b;
-            margin-bottom: 25px;
         }
 
         .question {
             background: #f8fafc;
-            padding: 20px;
-            border-radius: 14px;
-            margin-bottom: 18px;
+            padding: 18px;
+            margin: 18px 0;
             border-left: 5px solid #ff9933;
+            border-radius: 10px;
         }
 
-        .question h3 {
-            margin-top: 0;
-            color: #1e293b;
-        }
-
-        label {
+        .option {
             display: block;
             padding: 10px;
             margin: 7px 0;
-            border: 1px solid #e2e8f0;
-            border-radius: 9px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
             cursor: pointer;
-            transition: 0.2s;
         }
 
-        label:hover {
+        .option:hover {
             background: #fff7ed;
-            border-color: #ff9933;
         }
 
         input[type="radio"] {
-            margin-right: 10px;
-            accent-color: #ea580c;
+            margin-right: 8px;
         }
 
-        button {
+        button, .retry {
+            display: block;
             width: 100%;
-            padding: 15px;
+            padding: 14px;
+            border: none;
+            border-radius: 9px;
             background: #172554;
             color: white;
             font-size: 17px;
             font-weight: bold;
-            border: none;
-            border-radius: 12px;
             cursor: pointer;
-            margin-top: 10px;
+            text-align: center;
+            text-decoration: none;
         }
 
-        button:hover {
+        button:hover, .retry:hover {
             background: #ea580c;
         }
 
         .result {
-            text-align: center;
-            background: #ecfdf5;
-            padding: 20px;
+            margin-top: 25px;
+            padding: 22px;
             border-radius: 12px;
-            margin-top: 22px;
-            color: #065f46;
-        }
-
-        .result h2 { margin-top: 0; }
-
-        .restart {
-            display: block;
+            background: #ecfdf5;
             text-align: center;
-            margin-top: 18px;
-            color: #1d4ed8;
-            text-decoration: none;
-            font-weight: bold;
         }
+
+        .marks {
+            font-size: 34px;
+            font-weight: bold;
+            color: #047857;
+        }
+
+        .correct { color: #15803d; }
+        .wrong { color: #dc2626; }
 
         @media (max-width: 500px) {
-            .container { padding: 20px; }
+            .container { padding: 15px; }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>🇮🇳 Indian Capitals Quiz</h1>
-        <p class="subtitle">Test your knowledge of Indian state capitals!</p>
 
-        <form method="POST">
-            {% for item in questions %}
-                <div class="question">
-                    <h3>{{ loop.index }}. {{ item.q }}</h3>
-                    {% for option in item.options %}
-                        <label>
-                            <input type="radio"
-                                   name="q{{ loop.index0 }}"
-                                   value="{{ option }}"
-                                   required>
-                            {{ option }}
-                        </label>
-                    {% endfor %}
-                </div>
+<body>
+<div class="container">
+
+    <h1>🇮🇳 Indian Capitals Quiz</h1>
+    <p class="subtitle">15 Questions | 1 mark for each correct answer</p>
+
+    <form method="POST">
+
+        {% for q in questions %}
+        {% set i = loop.index0 %}
+
+        <div class="question">
+            <h3>{{ loop.index }}. {{ q.q }}</h3>
+
+            {% for option in q.options %}
+            <label class="option">
+                <input type="radio"
+                       name="q{{ i }}"
+                       value="{{ option }}"
+                       {% if not submitted %}required{% endif %}
+                       {% if submitted and answers[i] == option %}checked{% endif %}>
+                {{ option }}
+            </label>
             {% endfor %}
 
-            <button type="submit">Submit Answers</button>
-        </form>
-
-        {% if score is not none %}
-            <div class="result">
-                <h2>Your Score: {{ score }} / {{ questions|length }}</h2>
-                {% if score == questions|length %}
-                    <p>Excellent! All answers are correct! 🎉</p>
-                {% elif score >= questions|length // 2 %}
-                    <p>Good job! Keep learning! 👏</p>
+            {% if submitted %}
+                {% if answers[i] == q.answer %}
+                    <p class="correct">✓ Correct answer!</p>
                 {% else %}
-                    <p>Keep practicing. You can do it! 💪</p>
+                    <p class="wrong">
+                        ✗ Your answer:
+                        {{ answers[i] if answers[i] else "Not answered" }}
+                    </p>
+                    <p class="correct">
+                        Correct answer: {{ q.answer }}
+                    </p>
                 {% endif %}
-                <p>Percentage: {{ (score * 100 / questions|length)|round(1) }}%</p>
-                <a class="restart" href="/">Try Again</a>
-            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        {% if not submitted %}
+            <button type="submit">Submit Answers</button>
         {% endif %}
+
+    </form>
+
+    {% if submitted %}
+    <div class="result" id="results">
+        <h2>🎉 Your Final Results</h2>
+
+        <p class="marks">{{ score }} / 15 Marks</p>
+
+        <h3>Correct Answers: {{ correct }} / 15</h3>
+        <h3>Wrong Answers: {{ wrong }}</h3>
+        <h3>Percentage: {{ percentage }}%</h3>
+
+        {% if score == 15 %}
+            <h3>Excellent! Full marks! 🏆</h3>
+        {% elif score >= 10 %}
+            <h3>Very good! Keep it up! 👏</h3>
+        {% elif score >= 5 %}
+            <h3>Good try! Practice more. 👍</h3>
+        {% else %}
+            <h3>Keep learning. You can improve! 💪</h3>
+        {% endif %}
+
+        <a href="/" class="retry">Try Again</a>
     </div>
+    {% endif %}
+
+</div>
 </body>
 </html>
 """
@@ -184,22 +247,35 @@ HTML = """
 
 @app.route("/", methods=["GET", "POST"])
 def home():
-    score = None
+    submitted = request.method == "POST"
+    answers = [""] * len(questions)
+    score = 0
 
-    if request.method == "POST":
-        score = 0
+    if submitted:
+        for i, question in enumerate(questions):
+            # Read the answer submitted for each question
+            answers[i] = request.form.get(f"q{i}", "")
 
-        for i, item in enumerate(questions):
-            user_answer = request.form.get(f"q{i}", "")
-            if user_answer == item["answer"]:
+            # Award one mark for each correct answer
+            if answers[i] == question["answer"]:
                 score += 1
+
+    correct = score
+    wrong = len(questions) - correct
+    percentage = round((score / len(questions)) * 100, 2)
 
     return render_template_string(
         HTML,
         questions=questions,
-        score=score
+        submitted=submitted,
+        answers=answers,
+        score=score,
+        correct=correct,
+        wrong=wrong,
+        percentage=percentage
     )
 
 
 if __name__ == "__main__":
     app.run(debug=True)
+
