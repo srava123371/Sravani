@@ -1,337 +1,368 @@
-from flask import Flask, request, render_template_string
+
+from flask import Flask, request, redirect, url_for, session, render_template_string
+import os
+import secrets
 
 app = Flask(__name__)
 
-# Demo credentials
+# Secret key for login sessions
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
+
+# Login credentials
 inbuilt_user_name = "Sravani"
 inbuilt_user_password = "Sravani@1234#"
 
-HTML = """
+
+# ---------------- LOGIN PAGE ----------------
+LOGIN_PAGE = """
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nova | Secure Login</title>
+<title>Nova | Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
+    margin: 0;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 20px;
+    font-family: Arial, sans-serif;
     color: white;
     background:
-        radial-gradient(ellipse at 15% 20%,
-        #253c75 0%, transparent 40%),
-        radial-gradient(ellipse at 85% 80%,
-        #652b72 0%, transparent 40%),
+        radial-gradient(circle at top left, #273b7c, transparent 45%),
+        radial-gradient(circle at bottom right, #762d80, transparent 45%),
         #080b16;
-    padding: 20px;
-    overflow-x: hidden;
 }
 
-.orb {
-    position: fixed;
-    width: 240px;
-    height: 240px;
-    border-radius: 50%;
-    filter: blur(75px);
-    opacity: .45;
-    pointer-events: none;
-}
-
-.orb.one {
-    background: #477bff;
-    top: 5%;
-    left: 5%;
-}
-
-.orb.two {
-    background: #bb43f2;
-    bottom: 5%;
-    right: 5%;
-}
-
-.login-card {
+.card {
     width: 100%;
-    max-width: 420px;
-    position: relative;
-    padding: 42px 35px;
-    border: 1px solid rgba(255,255,255,.17);
+    max-width: 410px;
+    padding: 38px;
+    border: 1px solid #ffffff30;
     border-radius: 25px;
-    background: rgba(18, 22, 42, .76);
-    backdrop-filter: blur(22px);
-    box-shadow: 0 25px 80px rgba(0,0,0,.5);
-    animation: appear .8s ease;
-}
-
-@keyframes appear {
-    from {
-        opacity: 0;
-        transform: translateY(25px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    background: #171b30eF;
+    box-shadow: 0 20px 70px #0008;
 }
 
 .logo {
-    width: 66px;
-    height: 66px;
+    width: 65px;
+    height: 65px;
     margin: 0 auto 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 29px;
+    display: grid;
+    place-items: center;
     border-radius: 20px;
-    background: linear-gradient(135deg, #5285ff, #b44df0);
-    box-shadow: 0 0 35px rgba(100,105,255,.45);
+    font-size: 32px;
+    background: linear-gradient(135deg, #5785ff, #bd4bea);
 }
 
-h1 {
-    text-align: center;
-    font-size: 30px;
-    letter-spacing: 1px;
-}
-
-.subtitle {
-    text-align: center;
-    color: #a6aec8;
-    font-size: 13px;
-    margin: 10px 0 30px;
-}
+h1 { text-align: center; margin-bottom: 10px; }
+.subtitle { text-align: center; color: #a7afcb; margin-bottom: 30px; }
 
 label {
     display: block;
     margin: 18px 0 9px;
-    color: #dfe4f8;
     font-size: 13px;
-    font-weight: 600;
 }
 
-.input-box {
-    display: flex;
-    align-items: center;
-    border: 1px solid #353c59;
-    border-radius: 12px;
-    background: rgba(255,255,255,.045);
-    transition: .3s;
-}
-
-.input-box:focus-within {
-    border-color: #8a83ff;
-    box-shadow: 0 0 16px rgba(112,105,255,.18);
-}
-
-.input-box input {
+input {
     width: 100%;
-    min-width: 0;
-    padding: 15px 13px;
+    padding: 14px;
     color: white;
-    font-size: 14px;
-    background: transparent;
-    border: none;
+    border: 1px solid #414866;
+    border-radius: 11px;
+    background: #ffffff08;
     outline: none;
 }
 
-.input-box input::placeholder {
-    color: #777f9e;
-}
+input:focus { border-color: #9885ff; }
 
-.field-icon {
-    padding-left: 14px;
-    color: #a5a9ff;
-}
-
-.eye {
-    padding: 10px;
-    cursor: pointer;
-    color: #a5a9ff;
-    background: transparent;
-    border: none;
-}
-
-.login-btn {
+button {
     width: 100%;
-    margin-top: 27px;
     padding: 15px;
-    border: none;
-    border-radius: 12px;
+    margin-top: 25px;
     color: white;
     font-size: 15px;
     font-weight: bold;
-    letter-spacing: .5px;
+    border: none;
+    border-radius: 11px;
     cursor: pointer;
     background: linear-gradient(100deg, #557cff, #a34be9);
-    box-shadow: 0 8px 25px rgba(102,92,255,.3);
-    transition: .3s;
 }
 
-.login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(125,92,255,.5);
-}
-
-.message {
-    margin-top: 18px;
-    padding: 12px;
-    text-align: center;
-    border-radius: 10px;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.success {
-    color: #8dffc5;
-    border: 1px solid #267c59;
-    background: rgba(23,160,100,.12);
-}
+button:hover { opacity: .88; }
 
 .error {
-    color: #ff9caa;
-    border: 1px solid #85394b;
-    background: rgba(200,50,75,.12);
+    margin-top: 18px;
+    color: #ff9daa;
+    text-align: center;
+    font-size: 14px;
 }
 
 .footer {
-    margin-top: 28px;
+    margin-top: 25px;
+    color: #858eaa;
     text-align: center;
-    color: #78819e;
     font-size: 11px;
-    letter-spacing: 1px;
-}
-
-.secure {
-    margin-top: 19px;
-    text-align: center;
-    color: #a2abc4;
-    font-size: 12px;
-}
-
-@media (max-width: 480px) {
-    .login-card {
-        padding: 32px 23px;
-    }
-    h1 {
-        font-size: 26px;
-    }
 }
 </style>
 </head>
 
 <body>
-
-<div class="orb one"></div>
-<div class="orb two"></div>
-
-<main class="login-card">
-
+<div class="card">
     <div class="logo">✦</div>
-
     <h1>Welcome Back</h1>
-    <p class="subtitle">
-        Sign in to continue to your secure space
-    </p>
+    <p class="subtitle">Sign in to enter your digital world</p>
 
-    <form method="POST" autocomplete="off">
+    <form method="POST" action="/">
+        <label>USERNAME</label>
+        <input
+            type="text"
+            name="username"
+            placeholder="Enter username"
+            autocomplete="username"
+            required>
 
-        <label for="username">USERNAME</label>
-        <div class="input-box">
-            <span class="field-icon">♙</span>
-            <input
-                type="text"
-                id="username"
-                name="username"
-                placeholder="Enter your username"
-                required
-                autocomplete="username">
-        </div>
+        <label>PASSWORD</label>
+        <input
+            type="password"
+            name="password"
+            placeholder="Enter password"
+            autocomplete="current-password"
+            required>
 
-        <label for="password">PASSWORD</label>
-        <div class="input-box">
-            <span class="field-icon">▣</span>
-            <input
-                type="password"
-                id="password"
-                name="password"
-                placeholder="Enter your password"
-                required
-                autocomplete="current-password">
-            <button
-                class="eye"
-                type="button"
-                onclick="togglePassword()"
-                aria-label="Show or hide password">◉</button>
-        </div>
-
-        <button class="login-btn" type="submit">
-            SIGN IN &nbsp; →
-        </button>
-
+        <button type="submit">LOGIN →</button>
     </form>
 
-    {% if message %}
-        <div class="message {{ status }}" role="status">
-            {{ message }}
-        </div>
+    {% if error %}
+        <div class="error">{{ error }}</div>
     {% endif %}
 
-    <div class="secure">✧ &nbsp; YOUR SPACE. YOUR SECURITY.</div>
-
-    <div class="footer">
-        NOVA LOGIN SYSTEM · POWERED BY FLASK
-    </div>
-
-</main>
-
-<script>
-function togglePassword() {
-    const password = document.getElementById("password");
-
-    password.type =
-        password.type === "password" ? "text" : "password";
-}
-</script>
-
+    <div class="footer">✧ NOVA SECURE LOGIN ✧</div>
+</div>
 </body>
 </html>
 """
 
+
+# ---------------- DASHBOARD PAGE ----------------
+DASHBOARD_PAGE = """
+<!DOCTYPE html>
+<html>
+<head>
+<title>Nova | Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 25px;
+    color: white;
+    font-family: Arial, sans-serif;
+    background:
+        radial-gradient(circle at top right, #423075, transparent 40%),
+        radial-gradient(circle at bottom left, #183f66, transparent 40%),
+        #090c18;
+}
+
+nav {
+    max-width: 1050px;
+    margin: auto;
+    padding: 15px 0 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ffffff25;
+}
+
+.brand { font-size: 25px; font-weight: bold; letter-spacing: 2px; }
+.brand span { color: #b69aff; }
+
+.logout {
+    color: white;
+    text-decoration: none;
+    padding: 11px 18px;
+    border: 1px solid #ffffff35;
+    border-radius: 10px;
+}
+
+.logout:hover { background: #a34be9; }
+
+main { max-width: 1050px; margin: 50px auto; }
+
+.hero {
+    padding: 38px;
+    border: 1px solid #ffffff25;
+    border-radius: 24px;
+    background: #ffffff09;
+    box-shadow: 0 20px 60px #0004;
+}
+
+.eyebrow { color: #b69aff; letter-spacing: 3px; font-size: 12px; }
+
+h1 { font-size: clamp(32px, 5vw, 52px); margin: 20px 0; }
+
+.name {
+    color: #c5a5ff;
+}
+
+p { color: #a9b2cd; line-height: 1.8; }
+
+.status {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 15px;
+    color: #80ffc0;
+    border: 1px solid #278a62;
+    border-radius: 30px;
+    background: #123b2d;
+    font-size: 13px;
+}
+
+h2 { margin: 35px 0 20px; }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.tile {
+    padding: 25px;
+    border: 1px solid #ffffff20;
+    border-radius: 20px;
+    background: #ffffff09;
+    transition: .3s;
+}
+
+.tile:hover {
+    transform: translateY(-6px);
+    border-color: #9b81ff;
+}
+
+.symbol { font-size: 32px; }
+.tile h3 { margin-top: 22px; }
+
+footer {
+    max-width: 1050px;
+    margin: auto;
+    text-align: center;
+    color: #77819d;
+    font-size: 12px;
+}
+
+@media(max-width: 700px) {
+    .grid { grid-template-columns: 1fr; }
+    .hero { padding: 25px; }
+    main { margin-top: 30px; }
+}
+</style>
+</head>
+
+<body>
+<nav>
+    <div class="brand">✦ NOVA<span>.</span></div>
+    <a class="logout" href="/logout">LOGOUT ↗</a>
+</nav>
+
+<main>
+    <section class="hero">
+        <div class="eyebrow">YOUR PERSONAL DASHBOARD</div>
+
+        <h1>
+            Login Successful!<br>
+            Welcome, <span class="name">{{ username }}</span> ✨
+        </h1>
+
+        <p>
+            You have successfully logged in.<br>
+            Welcome to your own digital universe!
+        </p>
+
+        <div class="status">● AUTHENTICATED SUCCESSFULLY</div>
+    </section>
+
+    <h2>Your Dashboard</h2>
+
+    <section class="grid">
+        <div class="tile">
+            <div class="symbol">👤</div>
+            <h3>My Profile</h3>
+            <p>Welcome to your personal account.</p>
+        </div>
+
+        <div class="tile">
+            <div class="symbol">🚀</div>
+            <h3>Explore</h3>
+            <p>Your space for new projects and ideas.</p>
+        </div>
+
+        <div class="tile">
+            <div class="symbol">⚙️</div>
+            <h3>Settings</h3>
+            <p>Your dashboard is ready to customize.</p>
+        </div>
+    </section>
+</main>
+
+<footer>NOVA · PYTHON + FLASK · YOUR DIGITAL SPACE</footer>
+</body>
+</html>
+"""
+
+
+# ---------------- LOGIN ROUTE ----------------
 @app.route("/", methods=["GET", "POST"])
 def login():
-    message = ""
-    status = ""
-
     if request.method == "POST":
-        user_name = request.form.get("username", "").strip()
-        user_password = request.form.get("password", "")
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
         if (
-            user_name == inbuilt_user_name
-            and user_password == inbuilt_user_password
+            username == inbuilt_user_name
+            and password == inbuilt_user_password
         ):
-            message = "Login successful! Welcome, " + user_name + "!"
-            status = "success"
-        else:
-            message = "Invalid username or password. Please try again."
-            status = "error"
+            session["username"] = username
+
+            # IMPORTANT: open the dashboard page
+            return redirect(url_for("dashboard"))
+
+        return render_template_string(
+            LOGIN_PAGE,
+            error="❌ Invalid username or password. Try again."
+        )
+
+    return render_template_string(LOGIN_PAGE, error="")
+
+
+# ---------------- DASHBOARD ROUTE ----------------
+@app.route("/dashboard")
+def dashboard():
+    if "username" not in session:
+        return redirect(url_for("login"))
 
     return render_template_string(
-        HTML,
-        message=message,
-        status=status
+        DASHBOARD_PAGE,
+        username=session["username"]
     )
 
+
+# ---------------- LOGOUT ROUTE ----------------
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 if __name__ == "__main__":
-    print("Starting Nova Login System...")
-    print("Open http://127.0.0.1:5000 in your browser")
+    print("Nova Login Application Started!")
+    print("Open http://127.0.0.1:5000")
     app.run(debug=False)
+
