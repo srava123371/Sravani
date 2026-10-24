@@ -6,3 +6,4 @@ while n>0:
     n=n//10
 print(rev)
 
+
